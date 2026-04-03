@@ -355,7 +355,15 @@ var NAV=[
 function buildNav(){var h='';for(var g=0;g<NAV.length;g++){h+='<div class="nl">'+NAV[g].g+'</div>';for(var i=0;i<NAV[g].i.length;i++){var n=NAV[g].i[i];h+='<div class="ni'+(n.id===curView?' on':'')+'" onclick="goTo(\''+n.id+'\')">'+n.l+'</div>';}h+='<div class="ndiv"></div>';}document.getElementById('nav').innerHTML=h;}
 function goTo(v){curView=v;filtro='todos';filtroChq='todos';buildNav();render()}
 function getEs(y,m){return entries.filter(function(e){return e.date&&e.date.indexOf(mkey(y,m))===0})}
-function getSI(y,m){var s=saldos.find(function(s){return s.mes===mkey(y,m)});return s?s.valor:0}
+function getSI(y,m){
+  var s=saldos.find(function(x){return x.mes===mkey(y,m)});
+  if(s) return s.valor;
+  if(y===new Date().getFullYear()&&m===0&&new Date().getMonth()===0) return 0;
+  var pm=m-1,py=y;
+  if(pm<0){pm=11;py--;}
+  var prev=calc(py,pm);
+  return prev.sf;
+}
 function calc(y,m){var es=getEs(y,m),rec=0,des=0;for(var i=0;i<es.length;i++){if(es[i].tipo==='entrada')rec+=es[i].valor;else if(es[i].tipo==='saida')des+=es[i].valor}var si=getSI(y,m);return{rec:rec,des:des,si:si,sf:si+rec-des}}
 function chM(d){curM+=d;if(curM<0){curM=11;curY--}if(curM>11){curM=0;curY++}render()}
 function switchUser(){curUser=curUser==='Paulo'?'João':'Paulo';var av=document.getElementById('uav');av.textContent=curUser[0];av.style.background=curUser==='Paulo'?'#2563eb':'#7c3aed';document.getElementById('uname').textContent=curUser;var fu=document.getElementById('f-us');if(fu)fu.value=curUser;}
