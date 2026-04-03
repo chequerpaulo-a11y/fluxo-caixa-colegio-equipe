@@ -358,11 +358,14 @@ function getEs(y,m){return entries.filter(function(e){return e.date&&e.date.inde
 function getSI(y,m){
   var s=saldos.find(function(x){return x.mes===mkey(y,m)});
   if(s) return s.valor;
-  if(y===new Date().getFullYear()&&m===0&&new Date().getMonth()===0) return 0;
   var pm=m-1,py=y;
   if(pm<0){pm=11;py--;}
-  var prev=calc(py,pm);
-  return prev.sf;
+  var es=getEs(py,pm);
+  var rec=0,des=0;
+  for(var i=0;i<es.length;i++){if(es[i].tipo==='entrada')rec+=es[i].valor;else if(es[i].tipo==='saida')des+=es[i].valor;}
+  var siPrev=saldos.find(function(x){return x.mes===mkey(py,pm)});
+  var siVal=siPrev?siPrev.valor:0;
+  return siVal+rec-des;
 }
 function calc(y,m){var es=getEs(y,m),rec=0,des=0;for(var i=0;i<es.length;i++){if(es[i].tipo==='entrada')rec+=es[i].valor;else if(es[i].tipo==='saida')des+=es[i].valor}var si=getSI(y,m);return{rec:rec,des:des,si:si,sf:si+rec-des}}
 function chM(d){curM+=d;if(curM<0){curM=11;curY--}if(curM>11){curM=0;curY++}render()}
