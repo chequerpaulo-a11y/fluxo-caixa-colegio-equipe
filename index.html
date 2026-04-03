@@ -609,7 +609,35 @@ function rDFC(){var c=calc(curY,curM),es=getEs(curY,curM),res=c.rec-c.des;var rc
 function rAnual(){var ay=parseInt((document.getElementById('aySel')||{value:curY}).value||curY);var labs=[],rA=[],dA=[],rows='';for(var m=0;m<12;m++){var c=calc(ay,m),res=c.rec-c.des;labs.push(MONTHS[m].slice(0,3));rA.push(c.rec);dA.push(c.des);rows+='<tr><td>'+MONTHS[m]+'</td><td class="tr2">'+fmt(c.si)+'</td><td class="tr2 ap">'+fmt(c.rec)+'</td><td class="tr2 an">'+fmt(c.des)+'</td><td class="tr2" style="color:'+(res>=0?'#10b981':'#ef4444')+';font-weight:600">'+(res>=0?'+':'')+fmt(res)+'</td><td class="tr2" style="color:'+(c.sf>=0?'#10b981':'#ef4444')+';font-weight:700">'+fmt(c.sf)+'</td></tr>';}document.getElementById('main').innerHTML='<div class="ph"><div><h2>Visão Anual</h2><p>Consolidado por mês</p></div><select id="aySel" onchange="rAnual()" style="background:#1a2235;border:1px solid #1e2d45;border-radius:7px;color:#e2e8f0;padding:6px 11px;font-family:inherit;font-size:13px;cursor:pointer">'+[2024,2025,2026,2027].map(function(y){return'<option'+(y===ay?' selected':'')+'>'+y+'</option>'}).join('')+'</select></div><div class="card"><div class="ch"><div class="ct">Receitas vs Despesas '+ay+'</div></div><div class="cb"><canvas id="ch-an" height="220"></canvas></div></div><div class="card"><table><thead><tr><th>Mês</th><th class="tr2">Saldo Inicial</th><th class="tr2">Receitas</th><th class="tr2">Despesas</th><th class="tr2">Resultado</th><th class="tr2">Saldo Final</th></tr></thead><tbody>'+rows+'</tbody></table></div>';mkChart('ch-an',labs,rA,dA,'line');}
 
 // ── SALDO ─────────────────────────────────────────────────
-function rSaldo(){var now=new Date(),dm=mkey(now.getFullYear(),now.getMonth());var sorted=[].concat(saldos).sort(function(a,b){return b.mes.localeCompare(a.mes)});var sRows=sorted.length?sorted.map(function(s){var p=s.mes.split('-');return'<tr><td>'+MONTHS[parseInt(p[1])-1]+' '+p[0]+'</td><td>'+(s.obs||'—')+'</td><td class="tr2 ap">'+fmt(s.valor)+'</td><td><button class="btn btd sm" onclick="delSaldo(\''+s.mes+'\')">×</button></td></tr>'}).join(''):'<tr><td colspan="4"><div class="empty"><div>💰</div>Nenhum saldo</div></td></tr>';document.getElementById('main').innerHTML='<div class="ph"><div><h2>Saldo Inicial</h2><p>Configure o saldo de abertura por mês</p></div></div><div class="g2"><div class="card" style="margin:0"><div class="ch"><div class="ct">Definir Saldo</div></div><div class="cb"><div style="display:flex;flex-direction:column;gap:11px"><div class="fg"><label>Mês/Ano</label><input type="month" id="si-mes" value="'+dm+'"></div><div class="fg"><label>Valor (R$)</label><input type="number" id="si-val" placeholder="0,00" step="0.01"></div><div class="fg"><label>Observação</label><input type="text" id="si-obs" placeholder="Opcional..."></div><button class="btn btp" onclick="saveSaldo()">Salvar Saldo</button></div></div></div><div class="card" style="margin:0"><div class="ch"><div class="ct">Saldos Cadastrados</div></div><table><thead><tr><th>Mês</th><th>Obs</th><th class="tr2">Valor</th><th></th></tr></thead><tbody>'+sRows+'</tbody></table></div></div>';}
+function rSaldo(){
+  var now=new Date(),dm=mkey(now.getFullYear(),now.getMonth());
+  var meses=[];
+  for(var i=5;i>=-1;i--){var m=now.getMonth()-i,y=now.getFullYear();while(m<0){m+=12;y--;}meses.push({y:y,m:m});}
+  var rows=meses.map(function(x){
+    var key=mkey(x.y,x.m);
+    var manual=saldos.find(function(s){return s.mes===key});
+    var pm=x.m-1,py=x.y;if(pm<0){pm=11;py--;}
+    var auto=calc(py,pm).sf;
+    var val=manual?manual.valor:auto;
+    var badge=manual
+      ?'<span class="tg tg-fix" style="margin-right:6px">Manual</span>'
+      :'<span class="tg" style="background:rgba(37,99,235,.12);color:#60a5fa;margin-right:6px">Auto</span>';
+    var del=manual?'<button class="btn btd sm" onclick="delSaldo(\''+key+'\')">×</button>':'<span style="font-size:11px;color:#475569">—</span>';
+    return'<tr><td>'+MONTHS[x.m]+' '+x.y+'</td><td>'+badge+(manual&&manual.obs?manual.obs:'Saldo do mês anterior')+'</td><td class="tr2 ap">'+fmt(val)+'</td><td>'+del+'</td></tr>';
+  }).join('');
+  document.getElementById('main').innerHTML=
+  '<div class="ph"><div><h2>Saldo Inicial</h2><p>Manual sobrepõe o automático. Automático = saldo final do mês anterior.</p></div></div>'+
+  '<div class="g2">'+
+  '<div class="card" style="margin:0"><div class="ch"><div class="ct">Definir Saldo Manual</div></div><div class="cb"><div style="display:flex;flex-direction:column;gap:11px">'+
+  '<div class="fg"><label>Mês/Ano</label><input type="month" id="si-mes" value="'+dm+'"></div>'+
+  '<div class="fg"><label>Valor (R$)</label><input type="number" id="si-val" placeholder="0,00" step="0.01"></div>'+
+  '<div class="fg"><label>Observação</label><input type="text" id="si-obs" placeholder="Opcional..."></div>'+
+  '<button class="btn btp" onclick="saveSaldo()">Salvar Saldo Manual</button>'+
+  '</div></div></div>'+
+  '<div class="card" style="margin:0"><div class="ch"><div class="ct">Saldos — últimos 6 meses</div></div>'+
+  '<table><thead><tr><th>Mês</th><th>Origem</th><th class="tr2">Saldo Inicial</th><th></th></tr></thead>'+
+  '<tbody>'+rows+'</tbody></table></div></div>';
+}
 function saveSaldo(){var mes=document.getElementById('si-mes').value,valor=parseFloat(document.getElementById('si-val').value),obs=document.getElementById('si-obs').value;if(!mes||isNaN(valor)){showToast('Preencha mês e valor','er');return}db.collection('saldos').doc(mes).set({mes:mes,valor:valor,obs:obs});document.getElementById('si-val').value='';document.getElementById('si-obs').value='';showToast('Saldo salvo!');}
 function delSaldo(mes){db.collection('saldos').doc(mes).delete();showToast('Removido')}
 
