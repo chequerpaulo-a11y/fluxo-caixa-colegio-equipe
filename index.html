@@ -475,7 +475,7 @@ function getSI(y,m){
   if(s)return s.valor;
   var pm=m-1,py=y;
   if(pm<0){pm=11;py--;}
-  var es=getEs(py,pm);
+var es=getEs(py,pm).filter(function(e){return!e.contaOrigem&&!e.contaDestino});
   var rec=es.filter(function(e){return e.tipo==='entrada'}).reduce(function(a,e){return a+e.valor},0);
   var des=es.filter(function(e){return e.tipo==='saida'}).reduce(function(a,e){return a+e.valor},0);
   var siP=saldos.find(function(x){return x.mes===mkey(py,pm)});
@@ -489,7 +489,7 @@ function calc(y,m){
   return{rec:rec,des:des,si:si,sf:si+rec-des};
 }
 function calcComp(y,m){
-  var es=getEsComp(y,m);
+  var es=getEsComp(y,m).filter(function(e){return!e.contaOrigem&&!e.contaDestino});
   var rec=es.filter(function(e){return e.tipo==='entrada'}).reduce(function(a,e){return a+e.valor},0);
   var des=es.filter(function(e){return e.tipo==='saida'}).reduce(function(a,e){return a+e.valor},0);
   return{rec:rec,des:des,resultado:rec-des};
