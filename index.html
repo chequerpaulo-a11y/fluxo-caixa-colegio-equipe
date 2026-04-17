@@ -482,7 +482,7 @@ function getSI(y,m){
   return(siP?siP.valor:0)+rec-des;
 }
 function calc(y,m){
-  var es=getEs(y,m);
+  var es=getEs(y,m).filter(function(e){return!e.contaOrigem&&!e.contaDestino});
   var rec=es.filter(function(e){return e.tipo==='entrada'}).reduce(function(a,e){return a+e.valor},0);
   var des=es.filter(function(e){return e.tipo==='saida'}).reduce(function(a,e){return a+e.valor},0);
   var si=getSI(y,m);
